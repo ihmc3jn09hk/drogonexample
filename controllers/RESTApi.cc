@@ -1,4 +1,6 @@
 #include "RESTApi.h"
+#include <unistd.h>
+#include <signal.h>
 //add definition of your processing function here
 
 void RESTApi::get(const HttpRequestPtr &req,
@@ -20,7 +22,22 @@ void RESTApi::get(const HttpRequestPtr &req,
 				command = "echo Command C";
 		}
 
-    ret["exitcode"] = std::system(command.c_str());	//Store the exit code
+    //ret["exitcode"] = std::system(command.c_str());	//Store the exit code
+		pid_t pid;
+		if ( 0 == (pid = fork())){
+			while (1){
+				std::system(command.c_str());
+				sleep(2);
+			}
+		} else {
+			int counter = 0;
+			const int thres = 10;
+			while ( ++counter < thres ){
+				sleep(1);
+			}
+			LOG_DEBUG << "Kill Process (PID) : " << pid; 
+			kill(pid, SIGKILL);
+		}
 
     auto resp = HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
